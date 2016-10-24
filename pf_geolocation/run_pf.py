@@ -5,21 +5,11 @@ from pf_mod import *
 from my_project import *
 from filterpy.monte_carlo import systematic_resample
 import os.path
+from config import *
 
-path_to_tags = os.path.expanduser('~/Dropbox/Geolocation/projects/cod_zemeckis/tag_data/')
-# tagname = '7_S11951'
-tagname_list = ['7_S11951']
-tagid_list = [7]
-#tagname_list = ['8_S11938']
-#tagid_list = [8]
-
-N = 2000  # NUMBER OF PARTICLES
-hdiff_coef_in_km2_per_day = np.array([100, 50, 10])  # array of 3 [HIGH MODERATE LOW]
-
-nsub = 24  # NUMBER OF SUBSTEPS WITHIN A DAY
+hdiff_coef_in_km2_per_day = np.array([hdiff_high, hdiff_moderate, hdiff_low])  # array of 3 [HIGH MODERATE LOW]
 
 # load FVCOM GOM mesh
-fvcom_tidaldb = '/Users/cliu/Dropbox/Geolocation/preprocess/gen_tidal_db/fvcomdb_gom3_v2.mat'
 mat=scipy.io.loadmat(fvcom_tidaldb,squeeze_me=True, struct_as_record=False)
 fvcom=mat['fvcom']
 
@@ -41,7 +31,7 @@ for (tagname, tagid) in zip(tagname_list, tagid_list):
     print('Processing tag: '+tagname+'...')
 
     # load observation likelihood data
-    obslh_file=scipy.io.loadmat('/Users/cliu/Dropbox/Geolocation/smast_geolocate/run_dtcod_hpcc_cscvr/ObsLh'+tagname+'.mat',squeeze_me =False,struct_as_record=True)
+    obslh_file=scipy.io.loadmat(lhpath+'ObsLh'+tagname+'.mat',squeeze_me =False,struct_as_record=True)
     tide = obslh_file['tide'][0]
     # tide: activity level classification
     # 2 - low activity
