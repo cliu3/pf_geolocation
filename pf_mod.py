@@ -1,6 +1,7 @@
 # Test code from https://github.com/rlabbe/Kalman-and-Bayesian-Filters-in-Python/blob/master/12-Particle-Filters.ipynb
 
 from numpy.random import uniform
+from numpy.random import randn
 import numpy as np
 
 def nearest(X, y):
@@ -135,11 +136,6 @@ def resample_from_index(particles, total_weights, weights, indexes):
 
     return weights
 
-from filterpy.monte_carlo import systematic_resample
-from numpy.linalg import norm
-from numpy.random import randn
-import scipy.stats
-import matplotlib.pyplot as plt
 
 
 
