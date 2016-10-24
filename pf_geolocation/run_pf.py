@@ -8,13 +8,15 @@ import os.path
 
 path_to_tags = os.path.expanduser('~/Dropbox/Geolocation/projects/cod_zemeckis/tag_data/')
 # tagname = '7_S11951'
-tagname_list = ['8_S11938']
-tagid_list = [8]
+tagname_list = ['7_S11951']
+tagid_list = [7]
+#tagname_list = ['8_S11938']
+#tagid_list = [8]
 
-N = 1000  # NUMBER OF PARTICLES
+N = 2000  # NUMBER OF PARTICLES
 hdiff_coef_in_km2_per_day = np.array([100, 50, 10])  # array of 3 [HIGH MODERATE LOW]
 
-nsub = 3  # NUMBER OF SUBSTEPS WITHIN A DAY
+nsub = 24  # NUMBER OF SUBSTEPS WITHIN A DAY
 
 # load FVCOM GOM mesh
 fvcom_tidaldb = '/Users/cliu/Dropbox/Geolocation/preprocess/gen_tidal_db/fvcomdb_gom3_v2.mat'
