@@ -62,7 +62,7 @@ def likelihood(tag):
     # loop over days
     ObsLh = np.empty([ndays,fvcom.nverts])*np.nan
 
-    tide = np.zeros(ndays)
+    tide = np.zeros(ndays, dtype='int')
     # tide: activity level classification
     # 2 - low activity
     # 1 - moderate activity
@@ -93,7 +93,11 @@ def likelihood(tag):
         # calculate daily likelihood distribution
         ObsLh[i,:]=ObsLh_dep_total*ObsLh_temp_total*AttLh;
 
-    return ObsLh, tide
+    # TIDAL EXCLUSION
+
+    tagname = str(np.asscalar(tag['fish_id']))+'_'+tag['tag_id'][0]
+    scipy.io.savemat('ObsLh'+tagname+'.mat', {'ObsLh': ObsLh, 'tide': tide})
+    #return ObsLh, tide
 
 
 

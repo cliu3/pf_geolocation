@@ -5,6 +5,7 @@ from pf_mod import *
 from my_project import *
 from filterpy.monte_carlo import systematic_resample
 import os.path
+from likelihood import *
 from config import *
 
 hdiff_coef_in_km2_per_day = np.array([hdiff_high, hdiff_moderate, hdiff_low])  # array of 3 [HIGH MODERATE LOW]
@@ -16,22 +17,28 @@ fvcom=mat['fvcom']
 for (tagname, tagid) in zip(tagname_list, tagid_list):
     # load tag
     tag=scipy.io.loadmat(path_to_tags+str(tagid)+'_raw.mat',squeeze_me =False,struct_as_record=True)
-    tag=tag['tag']
-    dnum=tag['dnum'][0,0][:,0]
-    temp=tag['temp'][0,0][:,0]
-    depth=tag['depth'][0,0][:,0]
+    tag=tag['tag'][0,0]
+    dnum=tag['dnum'][:,0]
+    temp=tag['temp'][:,0]
+    depth=tag['depth'][:,0]
     dnum=dnum-678942
-    release_lon = tag['release_lon'][0,0][0,0]
-    release_lat = tag['release_lat'][0,0][0,0]
+    release_lon = tag['release_lon'][0,0]
+    release_lat = tag['release_lat'][0,0]
     [release_x, release_y] = my_project(release_lon, release_lat, 'forward')
-    recapture_lon = tag['recapture_lon'][0,0][0,0]
-    recapture_lat = tag['recapture_lat'][0,0][0,0]
+    recapture_lon = tag['recapture_lon'][0,0]
+    recapture_lat = tag['recapture_lat'][0,0]
     [recapture_x, recapture_y] = my_project(recapture_lon, recapture_lat, 'forward')
 
     print('Processing tag: '+tagname+'...')
 
     # load observation likelihood data
-    obslh_file=scipy.io.loadmat(lhpath+'ObsLh'+tagname+'.mat',squeeze_me =False,struct_as_record=True)
+    obslh_fname = lhpath+'ObsLh'+tagname+'.mat'
+    if (not os.path.isfile(obslh_fname) ) or ( not use_existing_obslh) :
+        print('ObsLh file does not exist. Constructing observational likelihood...')
+        likelihood(tag)
+        obslh_fname = 'ObsLh'+tagname+'.mat'
+
+    obslh_file=scipy.io.loadmat(obslh_fname, squeeze_me =False,struct_as_record=True)
     tide = obslh_file['tide'][0]
     # tide: activity level classification
     # 2 - low activity

@@ -20,7 +20,9 @@ fvcom_tidaldb = '/Users/cliu/Dropbox/Geolocation/preprocess/gen_tidal_db/fvcomdb
 bottom_temperature   = '/Users/cliu/Dropbox/Geolocation/data/bottom_temperature/gom3_btemp_davged_2003_2013.nc'
 
 # path to likelihood file:
-lhpath = '/Users/cliu/Dropbox/Geolocation/Results/All_WGOM_cod/'
+use_existing_obslh = True 
+#lhpath = '/Users/cliu/Dropbox/Geolocation/Results/All_WGOM_cod/'
+lhpath = ''
 
 # tideLV: criteria for tidal signal detection in likelihood model
 # tideLV  = [RMSE upper bound, R^2 lower bound, AMPLITUDE lower, AMPLITUDE upper]
