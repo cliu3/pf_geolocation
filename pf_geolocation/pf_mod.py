@@ -2,6 +2,7 @@
 
 from numpy.random import uniform
 from numpy.random import randn
+from scipy.spatial import cKDTree
 import numpy as np
 
 def nearest(X, y):
@@ -64,12 +65,20 @@ def predict(particles, hdiff, iterr, nsub, fvcom, dt=1.):
         y = y + (randn(N) * tscale)
 
         # find cell with nearest cell center
+        t_centers = cKDTree(centers)
+        pt = np.vstack([x,y]).T
+        _,minloc = t_centers.query(pt, k=1)
+
         for i in xrange(N):
-            pt = np.vstack([x,y]).T[i]
-            minval,minloc = nearest(centers,pt)
-            xtri = xv[nv[:,minloc]]
-            ytri = yv[nv[:,minloc]]
-            if isintriangle(xtri,ytri,pt[0],pt[1]):
+            # pt = np.vstack([x,y]).T[i]
+            # _,minloc = t_centers.query(pt, k=1)
+            # minval,minloc = nearest(centers,pt)
+            # xtri = xv[nv[:,minloc]]
+            # ytri = yv[nv[:,minloc]]
+            # if isintriangle(xtri,ytri,pt[0],pt[1]):
+            xtri = xv[nv[:,minloc[i]]]
+            ytri = yv[nv[:,minloc[i]]]
+            if isintriangle(xtri,ytri,pt[i,0],pt[i,1]):
                 stat[i] = 1
             else:
                 stat[i] = 0

@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.io
@@ -42,7 +43,12 @@ def main():
         if (not os.path.isfile(obslh_fname) ) or ( not use_existing_obslh) :
             print('ObsLh file does not exist. Constructing observational likelihood...')
             likelihood(tag)
+            print('#####################################')
+            print('Observational likelihood complete!')
+            print('#####################################')
             obslh_fname = 'ObsLh'+tagname+'.mat'
+        else:
+            print('Using existing observational likelihood file: ',obslh_fname)
 
         obslh_file=scipy.io.loadmat(obslh_fname, squeeze_me =False,struct_as_record=True)
         tide = obslh_file['tide'][0]
@@ -69,6 +75,7 @@ def main():
         hdiff_coef = hdiff_coef_in_km2_per_day * 11.57
 
         # main loop 
+        print('Particle filter geolocation for tag: '+tagname+'...')
         for x in range(1, iters):
 
             print('  Processing Day '+str(x+1)+'/'+str(iters)+'...')
