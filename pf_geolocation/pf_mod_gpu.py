@@ -3,7 +3,13 @@
 from numpy.random import uniform
 from numpy.random import randn
 from scipy.spatial import cKDTree
+import pycuda.gpuarray as gpuarray
+from pycuda.elementwise import ElementwiseKernel
+from pycuda.compiler import SourceModule
+import pycuda.driver as driver
 import numpy as np
+
+
 
 def nearest(X, y):
     dist = np.sum((X-y)**2,axis=1)
@@ -29,67 +35,9 @@ def create_uniform_particles(x_range, y_range, hdg_range, N):
     particles[:, 2] %= 2 * np.pi
     return particles
 
-def create_gaussian_particles(mean, std, N):
-    particles = np.empty((N, 2))
-    particles[:, 0] = mean[0] + (randn(N) * std[0])
-    particles[:, 1] = mean[1] + (randn(N) * std[1])
-    return particles
 
-def predict(particles, hdiff, iterr, nsub, fvcom, dt=1.):
 
-    xv = fvcom.x
-    yv = fvcom.y
-    nv = (fvcom.tri-1).T
-    xc = fvcom.xc
-    yc = fvcom.yc
-    centers = np.vstack([xc,yc]).T
 
-    N = len(particles[0])
-    stat = np.ones(N,dtype=np.int32)
-
-    x = particles[iterr-1, :, 0]
-    y = particles[iterr-1, :, 1]
-
-    for i in range(nsub):
-
-        print("    Moving particles in substep "+str(i+1)+"/"+str(nsub)+"...")
-
-        deltat = 86400.0 / nsub
-        tscale = (2*deltat*hdiff)**0.5;
-
-        # horizontal random walk
-        x2 = x
-        y2 = y
-
-        x = x + (randn(N) * tscale)
-        y = y + (randn(N) * tscale)
-
-        # find cell with nearest cell center
-        t_centers = cKDTree(centers)
-        pt = np.vstack([x,y]).T
-        _,minloc = t_centers.query(pt, k=1)
-
-        for i in range(N):
-            # pt = np.vstack([x,y]).T[i]
-            # _,minloc = t_centers.query(pt, k=1)
-            # minval,minloc = nearest(centers,pt)
-            # xtri = xv[nv[:,minloc]]
-            # ytri = yv[nv[:,minloc]]
-            # if isintriangle(xtri,ytri,pt[0],pt[1]):
-            xtri = xv[nv[:,minloc[i]]]
-            ytri = yv[nv[:,minloc[i]]]
-            if isintriangle(xtri,ytri,pt[i,0],pt[i,1]):
-                stat[i] = 1
-            else:
-                stat[i] = 0
-
-        # update particle state and reset particles on land 
-        x[stat==0] = x2[stat==0]
-        y[stat==0] = y2[stat==0]
-
-    # dump end-of-day locations
-    particles[iterr, :, 0] = x
-    particles[iterr, :, 1] = y
 
 
 
