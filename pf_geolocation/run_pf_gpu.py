@@ -113,12 +113,12 @@ def main():
 
         xv_gpu = gpuarray.to_gpu(xv.astype(np.float32))
         yv_gpu = gpuarray.to_gpu(yv.astype(np.float32))
-        nv_gpu = gpuarray.to_gpu(nv.astype(np.uint16))
+        nv_gpu = gpuarray.to_gpu(nv.astype(np.uint))
         centers_gpu = gpuarray.to_gpu(centers.astype(np.float32))
 
         # block grid sizes
         block_size = 512
-        grid_size = math.ceil(N/block_size)
+        grid_size = int(math.ceil(N/block_size))
         block = (block_size,1,1)
         grid = (grid_size,1)
 
@@ -232,7 +232,11 @@ def predict(particles,hdiff, iterr, nsub, fvcom):
     deltat = 86400.0 / nsub
     tscale = (2*deltat*hdiff)**0.5;
 
-  
+    mod_nearest = SourceModule(open('nearest.cu','r').read()) 
+    nearest = mod_nearest.get_function('nearest')
+    mod_update_loc = SourceModule(open('update_loc.cu','r').read())
+    update_loc = mod_update_loc.get_function('update_loc')
+ 
 
     for i in range(nsub):
 
@@ -259,8 +263,8 @@ def predict(particles,hdiff, iterr, nsub, fvcom):
 
         # find cell with nearest cell center
         minloc_gpu = gpuarray.empty(N,np.uint16)
-        mod_nearest = SourceModule(open('nearest.cu','r').read())
-        nearest = mod_nearest.get_function('nearest')
+        #mod_nearest = SourceModule(open('nearest.cu','r').read())
+        #nearest = mod_nearest.get_function('nearest')
         nearest(particle_x_gpu, particle_y_gpu, np.int32(N), centers_gpu, np.int32(nnodes), minloc_gpu, block=block, grid=grid)
 
         # t_centers = cKDTree(centers)
@@ -269,8 +273,8 @@ def predict(particles,hdiff, iterr, nsub, fvcom):
 
 
         # update locations for particles within FVCOM domain
-        mod_update_loc = SourceModule(open('update_loc.cu','r').read())
-        update_loc = mod_update_loc.get_function('update_loc')
+        #mod_update_loc = SourceModule(open('update_loc.cu','r').read())
+        #update_loc = mod_update_loc.get_function('update_loc')
         update_loc( particle_x_gpu, particle_y_gpu, x0_gpu, y0_gpu, xv_gpu, yv_gpu, nv_gpu, minloc_gpu, np.int32(nnodes), np.int32(N), block=block, grid=grid)
 
         # for i in range(N):
