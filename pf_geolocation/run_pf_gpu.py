@@ -1,10 +1,13 @@
 from __future__ import print_function
 import pycuda.gpuarray as gpuarray
 import pycuda.autoinit
+import pycuda.driver as driver
 import pycuda.curandom as curandom
 from pycuda.compiler import SourceModule
 import numpy as np
 import math
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import scipy.io
 from pf_mod_gpu import *
@@ -13,6 +16,8 @@ from filterpy.monte_carlo import systematic_resample
 import os.path
 from likelihood import *
 from config import *
+
+
 
 
 
@@ -25,6 +30,17 @@ def main():
     # load FVCOM GOM mesh
     mat=scipy.io.loadmat(fvcom_tidaldb,squeeze_me=True, struct_as_record=False)
     fvcom=mat['fvcom']
+
+    # initialize kernels
+    global nearest
+    global update_loc
+    global resample_from_index_kernel
+    mod_nearest = SourceModule(open('nearest.cu','r').read()) 
+    nearest = mod_nearest.get_function('nearest')
+    mod_update_loc = SourceModule(open('update_loc.cu','r').read())
+    update_loc = mod_update_loc.get_function('update_loc')
+    mod_resample_from_index_kernel = SourceModule(open('resample_from_index_kernel.cu','r').read())
+    resample_from_index_kernel = mod_resample_from_index_kernel.get_function('resample_from_index_kernel')
 
     for (tagname, tagid) in zip(tagname_list, tagid_list):
         # load tag
@@ -92,13 +108,12 @@ def main():
         
         # initialize GPU arrays
 
-        global nnodes
-
         global xv_gpu
         global yv_gpu
         global nv_gpu
         global centers_gpu
         global nnodes
+        global nelems
         global block        
         global grid
 
@@ -107,13 +122,14 @@ def main():
         nv = (fvcom.tri-1).T
         xc = fvcom.xc
         yc = fvcom.yc
-        centers = np.vstack([xc,yc]).T
+        centers = (np.vstack([xc,yc]).T).flatten()
         
-        nnodes = int(fvcom.nverts)
+        nnodes = np.int32(fvcom.nverts)
+        nelems = np.int32(fvcom.nelems)
 
         xv_gpu = gpuarray.to_gpu(xv.astype(np.float32))
         yv_gpu = gpuarray.to_gpu(yv.astype(np.float32))
-        nv_gpu = gpuarray.to_gpu(nv.astype(np.uint))
+        nv_gpu = gpuarray.to_gpu(nv.astype(np.uint32))
         centers_gpu = gpuarray.to_gpu(centers.astype(np.float32))
 
         # block grid sizes
@@ -137,22 +153,30 @@ def main():
             # Update: calculate weights
             weights = update(particles, weights, iterr = x, iObsLh = ObsLh[x, :], fvcom = fvcom)
 
-            # plt.figure()
-            # plt.scatter(particles[x,:,0], particles[x,:,1], c=weights)
-            # plt.title('Before resample')
+            plt.figure()
+            plt.scatter(particles[x,:,0], particles[x,:,1], c=weights)
+            plt.title('Before resample')
+
+            plt.figure()
+            plt.scatter(particle_x_gpu.get(), particle_y_gpu.get(), c=weights)
+            plt.title('Before resample (GPU)')
 
             # Resample: 
             if x < iters-1:
                 indexes = systematic_resample(weights)
-                weights = resample_from_index(particles, total_weights, weights, indexes)
+                weights = resample_from_index_gpu(particles, total_weights, weights, indexes)
 
             total_weights[x, :] = weights
 
             # total_weights[x, :] = weights
 
-            # plt.figure()
-            # plt.scatter(particles[x,:,0], particles[x,:,1], c=total_weights[x,:])
-            # plt.title('After resample')
+            plt.figure()
+            plt.scatter(particles[x,:,0], particles[x,:,1], c=total_weights[x,:])
+            plt.title('After resample')
+
+            plt.figure()
+            plt.scatter(particle_x_gpu.get(), particle_y_gpu.get(), c=total_weights[x,:])
+            plt.title('After resample (GPU)')
 
         # Most probable track (MPT): max total weight
         mpt_idx = np.argmax(total_weights.sum(axis=0))
@@ -187,8 +211,8 @@ def create_gaussian_particles(mean, std, N):
 
     ini_randx_gpu = rng.gen_normal(N,np.float32)
     ini_randy_gpu = rng.gen_normal(N,np.float32)
-    particle_x_gpu =mean[0]+ini_randx_gpu * std[0]
-    particle_y_gpu =mean[1]+ini_randy_gpu * std[1]
+    particle_x_gpu =np.float32(mean[0])+ini_randx_gpu * np.float32(std[0])
+    particle_y_gpu =np.float32(mean[1])+ini_randy_gpu * np.float32(std[1])
 
     # mean_gpu = gpuarray.to_gpu(mean)
     # std_gpu = gpuarray.to_gpu(std)
@@ -200,7 +224,7 @@ def create_gaussian_particles(mean, std, N):
     # driver.memcpy_dtod(particles_gpu[1,:].gpudata, randy_gpu.gpudata, particles_gpu[0,:].nbytes) #particles_gpu[1,:] = randy_gpu
 
 
-    return particles
+    # return particles
 
 def predict(particles,hdiff, iterr, nsub, fvcom):
 
@@ -212,9 +236,12 @@ def predict(particles,hdiff, iterr, nsub, fvcom):
     global nv_gpu
     global centers_gpu
     global nnodes
+    global nelems
     global block
     global grid
     global N
+    global nearest
+    global update_loc
 
     # xv = fvcom.x
     # yv = fvcom.y
@@ -224,18 +251,15 @@ def predict(particles,hdiff, iterr, nsub, fvcom):
     # centers = np.vstack([xc,yc]).T
 
 
-    stat = np.ones(N,dtype=np.int32)
+    # stat = np.ones(N,dtype=np.int32)
 
     x = particles[iterr-1, :, 0]
     y = particles[iterr-1, :, 1]
 
     deltat = 86400.0 / nsub
-    tscale = (2*deltat*hdiff)**0.5;
+    tscale = np.float32((2*deltat*hdiff)**0.5);
 
-    mod_nearest = SourceModule(open('nearest.cu','r').read()) 
-    nearest = mod_nearest.get_function('nearest')
-    mod_update_loc = SourceModule(open('update_loc.cu','r').read())
-    update_loc = mod_update_loc.get_function('update_loc')
+
  
 
     for i in range(nsub):
@@ -247,8 +271,13 @@ def predict(particles,hdiff, iterr, nsub, fvcom):
 
 
         # horizontal random walk
-        x0_gpu = particle_x_gpu
-        y0_gpu = particle_x_gpu
+        x0_gpu = gpuarray.empty_like(particle_x_gpu)
+        y0_gpu = gpuarray.empty_like(particle_y_gpu)
+        driver.memcpy_dtod(x0_gpu.gpudata, particle_x_gpu.gpudata, x0_gpu.nbytes)
+        driver.memcpy_dtod(y0_gpu.gpudata, particle_y_gpu.gpudata, y0_gpu.nbytes)
+
+        # x0_gpu = particle_x_gpu
+        # y0_gpu = particle_x_gpu
 
         randx_gpu = rng.gen_normal(N,np.float32)
         randy_gpu = rng.gen_normal(N,np.float32)
@@ -262,10 +291,11 @@ def predict(particles,hdiff, iterr, nsub, fvcom):
         # y = y + (randn(N) * tscale)
 
         # find cell with nearest cell center
-        minloc_gpu = gpuarray.empty(N,np.uint16)
+        minloc_gpu = gpuarray.empty(N,np.uint32)
         #mod_nearest = SourceModule(open('nearest.cu','r').read())
         #nearest = mod_nearest.get_function('nearest')
-        nearest(particle_x_gpu, particle_y_gpu, np.int32(N), centers_gpu, np.int32(nnodes), minloc_gpu, block=block, grid=grid)
+        nearest(particle_x_gpu, particle_y_gpu, np.int32(N), centers_gpu, nelems, minloc_gpu, block=block, grid=grid)
+        # print(minloc_gpu[:5])
 
         # t_centers = cKDTree(centers)
         # pt = np.vstack([x,y]).T
@@ -275,7 +305,7 @@ def predict(particles,hdiff, iterr, nsub, fvcom):
         # update locations for particles within FVCOM domain
         #mod_update_loc = SourceModule(open('update_loc.cu','r').read())
         #update_loc = mod_update_loc.get_function('update_loc')
-        update_loc( particle_x_gpu, particle_y_gpu, x0_gpu, y0_gpu, xv_gpu, yv_gpu, nv_gpu, minloc_gpu, np.int32(nnodes), np.int32(N), block=block, grid=grid)
+        update_loc( particle_x_gpu, particle_y_gpu, x0_gpu, y0_gpu, xv_gpu, yv_gpu, nv_gpu, minloc_gpu, nelems, np.int32(N), block=block, grid=grid)
 
         # for i in range(N):
         #     # pt = np.vstack([x,y]).T[i]
@@ -300,6 +330,30 @@ def predict(particles,hdiff, iterr, nsub, fvcom):
     # dump end-of-day locations
     particles[iterr, :, 0] = particle_x_gpu.get()
     particles[iterr, :, 1] = particle_y_gpu.get()
+
+def resample_from_index_gpu(particles, total_weights, weights, indexes):
+
+    global particle_x_gpu
+    global particle_y_gpu
+    global block
+    global grid
+
+    particles[:,:,:] = particles[:,indexes,:]
+    total_weights[:, :] = total_weights[:, indexes]
+    weights = weights[indexes]
+    weights /= np.sum(weights)
+
+    # update index in GPU
+    indexes_gpu = gpuarray.to_gpu(indexes.astype(np.uint32))
+    # print(indexes[0:5])
+    x0_gpu = gpuarray.empty_like(particle_x_gpu)
+    y0_gpu = gpuarray.empty_like(particle_y_gpu)
+    driver.memcpy_dtod(x0_gpu.gpudata, particle_x_gpu.gpudata, x0_gpu.nbytes)
+    driver.memcpy_dtod(y0_gpu.gpudata, particle_y_gpu.gpudata, y0_gpu.nbytes)
+    resample_from_index_kernel(particle_x_gpu, particle_y_gpu, x0_gpu, y0_gpu, indexes_gpu, np.int32(len(indexes)), block=block, grid=grid)
+
+    return weights
+
 
 if __name__ == '__main__':
    main()

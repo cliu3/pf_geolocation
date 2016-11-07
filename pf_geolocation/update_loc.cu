@@ -14,7 +14,7 @@ __device__ int isintriangle(float xt[3], float yt[3], float x0, float y0)
 
 }
 
-__global__ void update_loc(float * x, float * y, const float *x0, const float *y0, const float *xv, const float *yv, const unsigned int *nv, const int *minloc, const int nnodes, const int N) 
+__global__ void update_loc(float * x, float * y, const float *x0, const float *y0, const float *xv, const float *yv, const unsigned int *nv, const int *minloc, const int nele, const int N) 
 {
     int idx = blockIdx.x*blockDim.x + threadIdx.x;
     int i;
@@ -25,8 +25,8 @@ __global__ void update_loc(float * x, float * y, const float *x0, const float *y
         return;
 
     for (i=0; i<3; i++) {
-        xtri[i] = xv[nv[i * nnodes + minloc[idx]]];
-        ytri[i] = yv[nv[i * nnodes + minloc[idx]]];
+        xtri[i] = xv[nv[i * nele + minloc[idx]]];
+        ytri[i] = yv[nv[i * nele + minloc[idx]]];
     }
 
     if (!isintriangle(xtri,ytri,x[idx],y[idx])) {
