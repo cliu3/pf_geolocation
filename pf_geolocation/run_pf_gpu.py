@@ -20,7 +20,6 @@ from config import *
 
 
 
-
 def main():
     """
     This is the main function of the particle filter geolocation package.
@@ -92,9 +91,12 @@ def main():
         rng = curandom.XORWOWRandomNumberGenerator() 
 
         # create particles and weights
-        particles = np.empty([iters, N, 2])
+        global particles
         global particle_x_gpu
         global particle_y_gpu
+        
+        particles = np.empty([iters, N, 2])
+        
         particle_x_gpu, particle_y_gpu = create_gaussian_particles(mean=np.array([release_x, release_y]), std=np.array([50, 50]), N=N)
         particles[0, :, 0] = particle_x_gpu.get()
         particles[0, :, 1] = particle_y_gpu.get()
@@ -146,6 +148,7 @@ def main():
 
             print('  Processing Day '+str(x+1)+'/'+str(iters)+'...')
             print('  Activity: '+activity[tide[x]]+', D = '+str(hdiff_coef[tide[x]])+' m^2/s')
+            print('  # of particles: ', str(N))
 
             # Move: random walk substep, attreation term towards recap location
             predict(particles, hdiff=hdiff_coef[tide[x]], nsub = nsub, fvcom = fvcom, iterr = x)
@@ -153,13 +156,13 @@ def main():
             # Update: calculate weights
             weights = update(particles, weights, iterr = x, iObsLh = ObsLh[x, :], fvcom = fvcom)
 
-            plt.figure()
-            plt.scatter(particles[x,:,0], particles[x,:,1], c=weights)
-            plt.title('Before resample')
+            # plt.figure()
+            # plt.scatter(particles[x,:,0], particles[x,:,1], c=weights)
+            # plt.title('Before resample')
 
-            plt.figure()
-            plt.scatter(particle_x_gpu.get(), particle_y_gpu.get(), c=weights)
-            plt.title('Before resample (GPU)')
+            # plt.figure()
+            # plt.scatter(particle_x_gpu.get(), particle_y_gpu.get(), c=weights)
+            # plt.title('Before resample (GPU)')
 
             # Resample: 
             if x < iters-1:
@@ -170,13 +173,13 @@ def main():
 
             # total_weights[x, :] = weights
 
-            plt.figure()
-            plt.scatter(particles[x,:,0], particles[x,:,1], c=total_weights[x,:])
-            plt.title('After resample')
+            # plt.figure()
+            # plt.scatter(particles[x,:,0], particles[x,:,1], c=total_weights[x,:])
+            # plt.title('After resample')
 
-            plt.figure()
-            plt.scatter(particle_x_gpu.get(), particle_y_gpu.get(), c=total_weights[x,:])
-            plt.title('After resample (GPU)')
+            # plt.figure()
+            # plt.scatter(particle_x_gpu.get(), particle_y_gpu.get(), c=total_weights[x,:])
+            # plt.title('After resample (GPU)')
 
         # Most probable track (MPT): max total weight
         mpt_idx = np.argmax(total_weights.sum(axis=0))
@@ -207,12 +210,16 @@ def create_gaussian_particles(mean, std, N):
     # particles[:, 0] = mean[0] + (randn(N) * std[0])
     # particles[:, 1] = mean[1] + (randn(N) * std[1])
 
+    global particles
     global rng
 
     ini_randx_gpu = rng.gen_normal(N,np.float32)
     ini_randy_gpu = rng.gen_normal(N,np.float32)
     particle_x_gpu =np.float32(mean[0])+ini_randx_gpu * np.float32(std[0])
     particle_y_gpu =np.float32(mean[1])+ini_randy_gpu * np.float32(std[1])
+
+    particles[0, :, 0] = particle_x_gpu.get()
+    particles[0, :, 1] = particle_y_gpu.get()
 
     # mean_gpu = gpuarray.to_gpu(mean)
     # std_gpu = gpuarray.to_gpu(std)
@@ -253,8 +260,8 @@ def predict(particles,hdiff, iterr, nsub, fvcom):
 
     # stat = np.ones(N,dtype=np.int32)
 
-    x = particles[iterr-1, :, 0]
-    y = particles[iterr-1, :, 1]
+    # x = particles[iterr-1, :, 0]
+    # y = particles[iterr-1, :, 1]
 
     deltat = 86400.0 / nsub
     tscale = np.float32((2*deltat*hdiff)**0.5);
