@@ -8,6 +8,9 @@ from pf_mod import *
 from my_project import *
 from filterpy.monte_carlo import systematic_resample
 import os.path
+import os
+import sys
+sys.path.append(os.getcwd())
 from likelihood import *
 from config import *
 

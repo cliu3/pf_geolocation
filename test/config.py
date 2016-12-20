@@ -1,28 +1,30 @@
-path_to_tags = '/Users/cliu/Dropbox/Geolocation/projects/cod_zemeckis/tag_data/'
+#path_to_tags = '/Users/cliu/Dropbox/Geolocation/projects/cod_zemeckis/tag_data/'
+path_to_tags = '/home/cliu_local/cliu/pycuda_test/pf_geolocation/pf_geolocation/data/tag_files/'
 
-tagname_list = ['7_S11951']
-tagid_list = [7]
+#tagname_list = ['7_S11951']
+tagid_list = [7, 8, 11, 12, 13, 16, 17, 18, 22, 24]
 
 
-N = 2000  # NUMBER OF PARTICLES
+N = 50000  # NUMBER OF PARTICLES
 
-# Horizontal diffusivity coefficients fir high, moderate, and low activity days in km**2 per day:
-hdiff_high = 100
-hdiff_moderate = 50
-hdiff_low = 10
+# Horizontal diffusivity coefficients for high, moderate, and low activity days in km**2 per day:
+hdiff_high = 10
+hdiff_moderate = 5
+hdiff_low = 1
 
 
 nsub = 24  # NUMBER OF SUBSTEPS WITHIN A DAY
 
 # path to FVCOM GOM mesh
-fvcom_tidaldb = '/Users/cliu/Dropbox/Geolocation/preprocess/gen_tidal_db/fvcomdb_gom3_v2.mat'
+#fvcom_tidaldb = '/Users/cliu/Dropbox/Geolocation/preprocess/gen_tidal_db/fvcomdb_gom3_v2.mat'
+fvcom_tidaldb = '/home/cliu_local/cliu/pycuda_test/pf_geolocation/pf_geolocation/data/fvcomdb_gom3_v2.mat'
 # path to FVCOM bottom temperature
-bottom_temperature   = '/Users/cliu/Dropbox/Geolocation/data/bottom_temperature/gom3_btemp_davged_2003_2013.nc'
+bottom_temperature   = '/home/cliu_local/cliu/pycuda_test/pf_geolocation/pf_geolocation/data/gom3_btemp_davged_2003_2013.nc'
 
 # path to likelihood file:
 use_existing_obslh = True 
 #lhpath = '/Users/cliu/Dropbox/Geolocation/Results/All_WGOM_cod/'
-lhpath = ''
+lhpath = '/home/cliu_local/cliu/pycuda_test/pf_geolocation/pf_geolocation//data/likelihood_files/'
 
 # tideLV: criteria for tidal signal detection in likelihood model
 # tideLV  = [RMSE upper bound, R^2 lower bound, AMPLITUDE lower, AMPLITUDE upper]
