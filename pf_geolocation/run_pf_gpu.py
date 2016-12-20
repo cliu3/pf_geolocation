@@ -41,9 +41,9 @@ def main():
     mod_resample_from_index_kernel = SourceModule(open('resample_from_index_kernel.cu','r').read())
     resample_from_index_kernel = mod_resample_from_index_kernel.get_function('resample_from_index_kernel')
 
-    for (tagname, tagid) in zip(tagname_list, tagid_list):
+    for tagid in tagid_list:
         # load tag
-        tag=scipy.io.loadmat(path_to_tags+str(tagid)+'_raw.mat',squeeze_me =False,struct_as_record=True)
+        tag=scipy.io.loadmat(path_to_tags+'/'+str(tagid)+'_raw.mat',squeeze_me =False,struct_as_record=True)
         tag=tag['tag'][0,0]
         dnum=tag['dnum'][:,0]
         temp=tag['temp'][:,0]
@@ -56,12 +56,14 @@ def main():
         recapture_lat = tag['recapture_lat'][0,0]
         [recapture_x, recapture_y] = my_project(recapture_lon, recapture_lat, 'forward')
 
+        tagname = str(tagid)+'_'+tag['tag_id'][0]
+
         print('Processing tag: '+tagname+'...')
 
         #####################################
         # load observation likelihood data
         #####################################
-        obslh_fname = lhpath+'ObsLh'+tagname+'.mat'
+        obslh_fname = lhpath+'/ObsLh'+tagname+'.mat'
         if (not os.path.isfile(obslh_fname) ) or ( not use_existing_obslh) :
             print('ObsLh file does not exist. Constructing observational likelihood...')
             likelihood(tag)
