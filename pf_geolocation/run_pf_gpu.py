@@ -37,11 +37,12 @@ def main():
     global nearest
     global update_loc
     global resample_from_index_kernel
-    mod_nearest = SourceModule(open('nearest.cu','r').read()) 
+    CURRENT_DIR = os.path.dirname(__file__)
+    mod_nearest = SourceModule(open(os.path.join(CURRENT_DIR, 'nearest.cu'),'r').read()) 
     nearest = mod_nearest.get_function('nearest')
-    mod_update_loc = SourceModule(open('update_loc.cu','r').read())
+    mod_update_loc = SourceModule(open(os.path.join(CURRENT_DIR, 'update_loc.cu'),'r').read())
     update_loc = mod_update_loc.get_function('update_loc')
-    mod_resample_from_index_kernel = SourceModule(open('resample_from_index_kernel.cu','r').read())
+    mod_resample_from_index_kernel = SourceModule(open(os.path.join(CURRENT_DIR, 'resample_from_index_kernel.cu'),'r').read())
     resample_from_index_kernel = mod_resample_from_index_kernel.get_function('resample_from_index_kernel')
 
     for tagid in tagid_list:
