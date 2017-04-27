@@ -7,6 +7,7 @@ This code requires the following packages:
 * filterpy
 * netcdf4
 * pytides
+
 For the GPU version the following are required in addition:
 * CUDA
 * PyCUDA
