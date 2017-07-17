@@ -42,13 +42,18 @@ def predict(particles, hdiff, iterr, nsub, fvcom, dt=1.):
     nv = (fvcom.tri-1).T
     xc = fvcom.xc
     yc = fvcom.yc
-    centers = np.vstack([xc,yc]).T
+    ntve = fvcom.ntve
+    nbve = fvcom.nbve
+    nodes = np.vstack([xv,yv]).T
 
     N = len(particles[0])
     stat = np.ones(N,dtype=np.int32)
 
     x = particles[iterr-1, :, 0]
     y = particles[iterr-1, :, 1]
+
+    import matplotlib.pyplot as plt
+    # plt.triplot(xv, yv, nv.T)
 
     for i in range(nsub):
 
@@ -64,24 +69,49 @@ def predict(particles, hdiff, iterr, nsub, fvcom, dt=1.):
         x = x + (randn(N) * tscale)
         y = y + (randn(N) * tscale)
 
-        # find cell with nearest cell center
-        t_centers = cKDTree(centers)
+        # find nearest node
+        t_nodes = cKDTree(nodes)
         pt = np.vstack([x,y]).T
-        _,minloc = t_centers.query(pt, k=1)
+        _,minloc = t_nodes.query(pt, k=2)
+
+        
 
         for i in range(N):
-            # pt = np.vstack([x,y]).T[i]
-            # _,minloc = t_centers.query(pt, k=1)
-            # minval,minloc = nearest(centers,pt)
-            # xtri = xv[nv[:,minloc]]
-            # ytri = yv[nv[:,minloc]]
-            # if isintriangle(xtri,ytri,pt[0],pt[1]):
-            xtri = xv[nv[:,minloc[i]]]
-            ytri = yv[nv[:,minloc[i]]]
-            if isintriangle(xtri,ytri,pt[i,0],pt[i,1]):
-                stat[i] = 1
-            else:
-                stat[i] = 0
+            # find if particle is in any of the cells surrounding the two nearest nodes
+            nbve_unique = np.unique(nbve[:,minloc[i]])[1:]-1
+            for cell_idx in nbve_unique:
+                # cell_idx = nbve_unique[cell]-1
+                xtri = xv[nv[:,cell_idx]]
+                ytri = yv[nv[:,cell_idx]]
+                if isintriangle(xtri,ytri,pt[i,0],pt[i,1]):
+                    stat[i] = 1
+                    break
+                else:
+                    stat[i] = 0
+            if stat[i] == 0: # for out-of-domain particles redo random walk within the same substep until the particle is inside domain
+                while True:
+                    x[i] = x2[i] + (randn() * tscale)
+                    y[i] = y2[i] + (randn() * tscale)
+                    _,minloc_r = t_nodes.query([x[i], y[i]], k=2)
+                    nbve_unique = np.unique(nbve[:,minloc_r])[1:]-1
+                    # print(minloc_r)
+                    for cell_idx in nbve_unique:
+                        # cell_idx = nbve[cell,minloc_r]-1
+                        xtri = xv[nv[:,cell_idx]]
+                        ytri = yv[nv[:,cell_idx]]
+                        if isintriangle(xtri,ytri, x[i], y[i]):
+                            stat[i] = 1
+                            break
+                        else:
+                            stat[i] = 0
+                    if stat[i] == 1:
+                        # print("[DEBUG] An out-of-domain particle was made sure to stay within domain during random walk.")
+                        # import ipdb; ipdb.set_trace()
+                        break
+                    # else:
+                        # print("[DEBUG] Iteration failed")
+                        # plt.plot(x[i],y[i],'rx')
+                        # import ipdb; ipdb.set_trace()
 
         # update particle state and reset particles on land 
         x[stat==0] = x2[stat==0]

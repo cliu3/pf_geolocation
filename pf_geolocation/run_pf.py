@@ -4,6 +4,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import scipy.io
+import netCDF4
 from pf_mod import *
 from my_project import *
 from filterpy.monte_carlo import systematic_resample
@@ -14,6 +15,10 @@ sys.path.append(os.getcwd())
 from likelihood import *
 from config import *
 
+class objectview(object):
+    def __init__(self, d):
+        self.__dict__ = d
+
 def main():
     """
     This is the main function of the particle filter geolocation package.
@@ -21,8 +26,19 @@ def main():
     hdiff_coef_in_km2_per_day = np.array([hdiff_high, hdiff_moderate, hdiff_low])  # array of 3 [HIGH MODERATE LOW]
 
     # load FVCOM GOM mesh
-    mat=scipy.io.loadmat(fvcom_tidaldb,squeeze_me=True, struct_as_record=False)
-    fvcom=mat['fvcom']
+    grid_nc = netCDF4.Dataset(fvcom_grid)
+    fvcom = {
+        "x": grid_nc.variables['x'][:],
+        "y": grid_nc.variables['y'][:],
+        "tri": grid_nc.variables['nv'][:].T,
+        "xc": grid_nc.variables['xc'][:],
+        "yc": grid_nc.variables['yc'][:],
+        "ntve": grid_nc.variables['ntve'][:], # number of elems surrounding each node
+        "nbve": grid_nc.variables['nbve'][:], # elems surrounding each node
+    }
+    fvcom=objectview(fvcom)
+    # mat=scipy.io.loadmat(fvcom_tidaldb,squeeze_me=True, struct_as_record=False)
+    # fvcom=mat['fvcom']
 
     for tagid in tagid_list:
         # load tag
