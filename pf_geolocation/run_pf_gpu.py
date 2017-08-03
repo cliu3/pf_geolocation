@@ -340,7 +340,7 @@ def predict(particles,hdiff, iterr, nsub, fvcom):
         # update locations for particles within FVCOM domain
         #mod_update_loc = SourceModule(open('update_loc.cu','r').read())
         #update_loc = mod_update_loc.get_function('update_loc')
-        update_loc( particle_x_gpu, particle_y_gpu, x0_gpu, y0_gpu, xv_gpu, yv_gpu, nv_gpu, ntve_gpu, nbve_gpu, minloc_gpu, nelems, np.int32(N), block=block, grid=grid)
+        update_loc( particle_x_gpu, particle_y_gpu, x0_gpu, y0_gpu, xv_gpu, yv_gpu, nv_gpu, ntve_gpu, nbve_gpu, minloc_gpu, second_minloc_gpu, nelems, nnodes, np.int32(N), block=block, grid=grid)
 
         # for i in range(N):
         #     # pt = np.vstack([x,y]).T[i]

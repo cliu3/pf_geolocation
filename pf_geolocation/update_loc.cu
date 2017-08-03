@@ -58,7 +58,10 @@ __device__ void merge(int *a, int nbr_a, int *b, int nbr_b, int *c) {
 
 }
 
-__global__ void update_loc(float * x, float * y, const float *x0, const float *y0, const float *xv, const float *yv, const unsigned int *nv, const unsigned int *ntve, const unsigned int *nbve, const int *minloc, const int *second_minloc, const int nele, const int N) 
+__global__ void update_loc(float * x, float * y, const float *x0, const float *y0, \
+    const float *xv, const float *yv, const unsigned int *nv, const unsigned int *ntve, \
+    const unsigned int *nbve, const int *minloc, const int *second_minloc, const int nele, \
+    const int node, const int N) 
 {
     int idx = blockIdx.x*blockDim.x + threadIdx.x;
     int i, j;
@@ -76,14 +79,15 @@ __global__ void update_loc(float * x, float * y, const float *x0, const float *y
         return;
 
     //collece nbve's
-    for (i=0; i<ntve1; i++) 
-        nbve1[i] = nbve[i * nele + minloc[idx]];
-    for (i=0; i<ntve2; i++) 
-        nbve2[i] = nbve[i * nele + second_minloc[idx]];
+    //ntve counts from zero
+    for (i=0; i<=ntve1; i++) 
+        nbve1[i] = nbve[i * node + minloc[idx]];
+    for (i=0; i<=ntve2; i++) 
+        nbve2[i] = nbve[i * node + second_minloc[idx]];
 
     //merge and unique
-    merge(nbve1, ntve1, nbve2, ntve2, nbve_total);
-    NewLength = unique(nbve_total, ntve1+ntve2);
+    merge(nbve1, ntve1+1, nbve2, ntve2+1, nbve_total);
+    NewLength = unique(nbve_total, ntve1+ntve2+2);
 
     // find if particle is in any of the cells surrounding the two nearest nodes
     for (j=0; j<NewLength; j++) {
@@ -100,13 +104,14 @@ __global__ void update_loc(float * x, float * y, const float *x0, const float *y
             }
 
         }
-
-        if (stat == 0) {
-            x[idx] = x0[idx];
-            y[idx] = y0[idx];        
-        }
-
+        if (stat == 1) break;
     }
+    if (stat == 0) {
+        x[idx] = x0[idx];
+        y[idx] = y0[idx];        
+    }
+
+    
 
 
 }
