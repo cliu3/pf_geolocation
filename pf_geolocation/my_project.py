@@ -18,7 +18,10 @@ def my_project(in_east, in_north, direction):
       EXAMPLE USAGE
          lon,lat = my_project(x,y,'reverse') 
     '''
-    import mpl_toolkits.basemap.pyproj as pyproj
+    try:
+        import mpl_toolkits.basemap.pyproj as pyproj
+    except:
+        import pyproj
     #state_plane = pyproj.Proj(r'+proj=tmerc +datum=NAD83 +lon_0=-70d10 lat_0=42d50 k=.9999666666666667 x_0=900000 y_0=0 +to_meter=1')
     #state_plane = pyproj.Proj(r'+proj=tmerc +lat_0=42.83333333333334 +lon_0=-70.16666666666667 +k=0.9999666666666667 +x_0=900000 +y_0=0 +ellps=GRS80 +units=m +no_defs')
     state_plane = pyproj.Proj(r'+proj=tmerc +lat_0=42d50 +lon_0=-70d10 +k=0.9999666666666667 +x_0=900000 +y_0=0 +ellps=GRS80 +units=m +no_defs')
