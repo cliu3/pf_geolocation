@@ -5,6 +5,11 @@ from scipy.stats import norm
 import utils
 from config import *
 
+try: 
+    xrange 
+except NameError: 
+    xrange = range
+
 def likelihood(tag):
     """
     Construction of likelihood function after (Le Bris et al, 2013 eq (2))
@@ -119,7 +124,7 @@ def likelihood(tag):
 
 
     tagname = str(np.asscalar(tag['fish_id']))+'_'+tag['tag_id'][0]
-    scipy.io.savemat('ObsLh'+tagname+'.mat', {'ObsLh': ObsLh, 'tide': tide})
+    scipy.io.savemat(lhpath+'/'+'ObsLh'+tagname+'.mat', {'ObsLh': ObsLh, 'tide': tide})
     #return ObsLh, tide
 
     
@@ -144,7 +149,7 @@ def tidal_detection(tag):
     int_dnum = np.floor(tag['dnum'])
     dbeg = int_dnum[0]
     dend = int_dnum[-1]
-    days = range(dbeg,dend+1)
+    days = range(int(dbeg), int(dend+1))
     ndays = len(days)
 
     
@@ -393,7 +398,7 @@ def tidal_detection_long(tag, tide):
     int_dnum = np.floor(tag['dnum'])
     dbeg = int_dnum[0]
     dend = int_dnum[-1]
-    days = range(dbeg,dend+1)
+    days = range(int(dbeg), int(dend+1))
     ndays = len(days)
 
     #p: M2 period in hours

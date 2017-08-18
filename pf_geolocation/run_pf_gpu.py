@@ -10,6 +10,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import scipy.io
+import netCDF4
 from pf_mod_gpu import *
 from my_project import *
 from filterpy.monte_carlo import systematic_resample
@@ -20,7 +21,9 @@ sys.path.append(os.getcwd())
 from likelihood import *
 from config import *
 
-
+class objectview(object):
+    def __init__(self, d):
+        self.__dict__ = d
 
 
 def main():
@@ -30,8 +33,19 @@ def main():
     hdiff_coef_in_km2_per_day = np.array([hdiff_high, hdiff_moderate, hdiff_low])  # array of 3 [HIGH MODERATE LOW]
 
     # load FVCOM GOM mesh
-    mat=scipy.io.loadmat(fvcom_tidaldb,squeeze_me=True, struct_as_record=False)
-    fvcom=mat['fvcom']
+    grid_nc = netCDF4.Dataset(fvcom_grid)
+    fvcom = {
+        "x": grid_nc.variables['x'][:],
+        "y": grid_nc.variables['y'][:],
+        "tri": grid_nc.variables['nv'][:].T,
+        "xc": grid_nc.variables['xc'][:],
+        "yc": grid_nc.variables['yc'][:],
+        "ntve": grid_nc.variables['ntve'][:], # number of elems surrounding each node
+        "nbve": grid_nc.variables['nbve'][:], # elems surrounding each node
+        "nverts": grid_nc.dimensions['node'].size,
+        "nelems": grid_nc.dimensions['nele'].size
+    }
+    fvcom=objectview(fvcom)
 
     # initialize kernels
     global nearest
@@ -119,7 +133,9 @@ def main():
         global xv_gpu
         global yv_gpu
         global nv_gpu
-        global centers_gpu
+        global nodes_gpu
+        global nbve_gpu
+        global ntve_gpu
         global nnodes
         global nelems
         global block        
@@ -130,7 +146,10 @@ def main():
         nv = (fvcom.tri-1).T
         xc = fvcom.xc
         yc = fvcom.yc
-        centers = (np.vstack([xc,yc]).T).flatten()
+        ntve = fvcom.ntve
+        nbve = fvcom.nbve
+        nodes = np.vstack([xv,yv]).T.flatten()
+        # centers = (np.vstack([xc,yc]).T).flatten()
         
         nnodes = np.int32(fvcom.nverts)
         nelems = np.int32(fvcom.nelems)
@@ -138,7 +157,9 @@ def main():
         xv_gpu = gpuarray.to_gpu(xv.astype(np.float32))
         yv_gpu = gpuarray.to_gpu(yv.astype(np.float32))
         nv_gpu = gpuarray.to_gpu(nv.astype(np.uint32))
-        centers_gpu = gpuarray.to_gpu(centers.astype(np.float32))
+        ntve_gpu = gpuarray.to_gpu(ntve.astype(np.uint32))
+        nbve_gpu = gpuarray.to_gpu(nbve.astype(np.uint32))
+        nodes_gpu = gpuarray.to_gpu(nodes.astype(np.float32))
 
         # block grid sizes
         block_size = 512
@@ -247,7 +268,7 @@ def predict(particles,hdiff, iterr, nsub, fvcom):
     global xv_gpu
     global yv_gpu
     global nv_gpu
-    global centers_gpu
+    global nodes_gpu
     global nnodes
     global nelems
     global block
@@ -305,9 +326,10 @@ def predict(particles,hdiff, iterr, nsub, fvcom):
 
         # find cell with nearest cell center
         minloc_gpu = gpuarray.empty(N,np.uint32)
+        second_minloc_gpu = gpuarray.empty(N,np.uint32)
         #mod_nearest = SourceModule(open('nearest.cu','r').read())
         #nearest = mod_nearest.get_function('nearest')
-        nearest(particle_x_gpu, particle_y_gpu, np.int32(N), centers_gpu, nelems, minloc_gpu, block=block, grid=grid)
+        nearest(particle_x_gpu, particle_y_gpu, np.int32(N), nodes_gpu, nelems, minloc_gpu, second_minloc_gpu, block=block, grid=grid)
         # print(minloc_gpu[:5])
 
         # t_centers = cKDTree(centers)
@@ -318,7 +340,7 @@ def predict(particles,hdiff, iterr, nsub, fvcom):
         # update locations for particles within FVCOM domain
         #mod_update_loc = SourceModule(open('update_loc.cu','r').read())
         #update_loc = mod_update_loc.get_function('update_loc')
-        update_loc( particle_x_gpu, particle_y_gpu, x0_gpu, y0_gpu, xv_gpu, yv_gpu, nv_gpu, minloc_gpu, nelems, np.int32(N), block=block, grid=grid)
+        update_loc( particle_x_gpu, particle_y_gpu, x0_gpu, y0_gpu, xv_gpu, yv_gpu, nv_gpu, ntve_gpu, nbve_gpu, minloc_gpu, second_minloc_gpu, nelems, nnodes, np.int32(N), block=block, grid=grid)
 
         # for i in range(N):
         #     # pt = np.vstack([x,y]).T[i]

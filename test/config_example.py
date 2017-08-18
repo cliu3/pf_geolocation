@@ -4,7 +4,7 @@ path_to_tags = '/home/cliu/pf_geolocation/data/tag_files'
 #tagname_list = ['7_S11951']
 tagid_list = [12] #56 days
 
-N = 2000  # NUMBER OF PARTICLES
+N = 200000  # NUMBER OF PARTICLES
 
 # Horizontal diffusivity coefficients for high, moderate, and low activity days in km**2 per day:
 hdiff_high = 10
@@ -17,7 +17,6 @@ nsub = 24  # NUMBER OF SUBSTEPS WITHIN A DAY
 # path to FVCOM GOM mesh
 #fvcom_tidaldb = '/Users/cliu/Dropbox/Geolocation/preprocess/gen_tidal_db/fvcomdb_gom3_v2.mat'
 fvcom_tidaldb = '/home/cliu/pf_geolocation/data/fvcomdb_gom3_v2.mat'
-fvcom_grid = '/home/cliu/pf_geolocation/data/gom3_grid_full.nc'
 # path to FVCOM bottom temperature
 bottom_temperature   = '/home/cliu/pf_geolocation/data/gom3_btemp_davged_2003_2013.nc'
 
