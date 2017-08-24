@@ -71,12 +71,15 @@ __global__ void update_loc(float * x, float * y, const float *x0, const float *y
     float ytri[3];
     int nbve1[9];
     int nbve2[9];
+
+    if(idx >= N)
+        return;
+    
     int ntve1 = ntve[minloc[idx]];
     int ntve2 = ntve[second_minloc[idx]];
     int nbve_total[20];
     
-    if(idx >= N)
-        return;
+
 
     //collece nbve's
     //ntve counts from zero
