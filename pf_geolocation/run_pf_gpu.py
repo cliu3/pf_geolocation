@@ -209,8 +209,8 @@ def main():
             # plt.title('After resample (GPU)')
 
         # Most probable track (MPT): max total weight
-        mpt_idx = np.argmax(total_weights.sum(axis=0))
-
+        # mpt_idx = np.argmax(total_weights.sum(axis=0))
+        mpt_idx = np.argmax(total_weights[:-1].sum(axis=0)*total_weights[-1])
 
         # save data
         result={'particles':particles, 'total_weights': total_weights, 'mpt_idx':mpt_idx}

@@ -16,7 +16,7 @@ __device__ int isintriangle(float xt[3], float yt[3], float x0, float y0)
 
 __device__ int unique(int *array, int Length) {
     // find unique elements of an array, ignore zeros
-    // code midified from https://stackoverflow.com/a/1533394/4695588
+    // code modified from https://stackoverflow.com/a/1533394/4695588
   int i, j;
   // int array[12] = {1, 2, 4, 4, 3, 6, 5, 2, 5, 3, 9, 10};
   // int Length = 12;
@@ -38,7 +38,7 @@ __device__ int unique(int *array, int Length) {
 
 __device__ void merge(int *a, int nbr_a, int *b, int nbr_b, int *c) {
     // merge two arrays
-    // code midified from https://stackoverflow.com/a/1700335/4695588
+    // code modified from https://stackoverflow.com/a/1700335/4695588
     int i=0, j=0, k=0;
 
     // Phase 1) 2 input arrays not exhausted
@@ -81,7 +81,7 @@ __global__ void update_loc(float * x, float * y, const float *x0, const float *y
     
 
 
-    //collece nbve's
+    //collect nbve's
     //ntve counts from zero
     for (i=0; i<=ntve1; i++) 
         nbve1[i] = nbve[i * node + minloc[idx]];
