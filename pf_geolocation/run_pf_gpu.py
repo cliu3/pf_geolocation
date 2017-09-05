@@ -329,7 +329,7 @@ def predict(particles,hdiff, iterr, nsub, fvcom):
         second_minloc_gpu = gpuarray.empty(N,np.uint32)
         #mod_nearest = SourceModule(open('nearest.cu','r').read())
         #nearest = mod_nearest.get_function('nearest')
-        nearest(particle_x_gpu, particle_y_gpu, np.int32(N), nodes_gpu, nelems, minloc_gpu, second_minloc_gpu, block=block, grid=grid)
+        nearest(particle_x_gpu, particle_y_gpu, np.int32(N), nodes_gpu, nnodes, minloc_gpu, second_minloc_gpu, block=block, grid=grid)
         # print(minloc_gpu[:5])
 
         # t_centers = cKDTree(centers)
