@@ -1,1 +1,5 @@
-python ../pf_geolocation/run_pf.py
+TO RUN WITH CPU:
+    python ../pf_geolocation/run_pf.py
+
+TO RUN WITH GPU:
+    python ../pf_geolocation/run_pf_gpu.py
