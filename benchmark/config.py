@@ -1,5 +1,5 @@
 #path_to_tags = '/Users/cliu/Dropbox/Geolocation/projects/cod_zemeckis/tag_data/'
-path_to_tags = '../../test/data/tag_files/'
+path_to_tags = '../test/data/tag_files/'
 
 #tagname_list = ['7_S11951']
 tagid_list = [12] #56 days
@@ -16,15 +16,15 @@ nsub = 24  # NUMBER OF SUBSTEPS WITHIN A DAY
 
 # path to FVCOM GOM mesh
 #fvcom_tidaldb = '/Users/cliu/Dropbox/Geolocation/preprocess/gen_tidal_db/fvcomdb_gom3_v2.mat'
-fvcom_tidaldb = '../../test/data/fvcomdb_gom3_v2.mat'
+fvcom_tidaldb = '../test/data/fvcomdb_gom3_v2.mat'
 # path to FVCOM bottom temperature
 bottom_temperature   = '../../test/data/gom3_btemp_davged_2003_2013.nc'
 
 # path to likelihood file:
 use_existing_obslh = True 
 #lhpath = '/Users/cliu/Dropbox/Geolocation/Results/All_WGOM_cod/'
-lhpath = '../../test/data/likelihood_files/'
-fvcom_grid = '../../test/data/gom3_grid_full.nc'
+lhpath = '../test/data/likelihood_files/'
+fvcom_grid = '../test/data/gom3_grid_full.nc'
 # tideLV: criteria for tidal signal detection in likelihood model
 # tideLV  = [RMSE upper bound, R^2 lower bound, AMPLITUDE lower, AMPLITUDE upper]
 tideLV  = [0.42, 0.85, 0.2, 2.0]
