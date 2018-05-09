@@ -204,7 +204,7 @@ def tidal_detection(tag):
 
         # find best fit for each day and reconstruct corresponding fvcom signal
         if np.sum(crit)>0:
-            idx=np.where(rmse==np.min(rmse[crit]))[0]
+            idx=np.argwhere(rmse==np.min(rmse[crit])).item(0)
             
             intv=range(days_idx[idx], min(ntimes,days_idx[idx]+nwindow-1)+1 )
             td_used[intv]=1
@@ -436,7 +436,7 @@ def tidal_detection_long(tag, tide):
         if np.sum(crit)>0:
             tide[i] = 2
             
-            idx=np.where(rmse==np.min(rmse[crit]))[0]
+            idx=np.argwhere(rmse==np.min(rmse[crit])).item(0)
             intv=range(days_idx[idx], min(ntimes,days_idx[idx]+nwindow-1)+1 )
             intv_cell[i]=intv
             time=tag['dnum'][intv].T[0]

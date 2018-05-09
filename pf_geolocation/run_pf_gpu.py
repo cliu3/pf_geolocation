@@ -88,7 +88,7 @@ def main():
             print('#####################################')
             print('Observational likelihood complete!')
             print('#####################################')
-            obslh_fname = 'ObsLh'+tagname+'.mat'
+            #obslh_fname = 'ObsLh'+tagname+'.mat'
         else:
             print('Using existing observational likelihood file: ',obslh_fname)
 
